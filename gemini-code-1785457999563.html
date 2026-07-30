@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로 인물 관계도 메이커</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #ccc;
+            --viewport-bg: #ffffff;
+            --node-bg: #e2e8f0;
+            --section-bg: #f9f9f9;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #f0f0f0;
+            --border-color: #444;
+            --viewport-bg: #181818;
+            --node-bg: #2d3748;
+            --section-bg: #252525;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1 {
+            text-align: center;
+            margin: 0 0 8px 0;
+            font-size: 20px;
+        }
+        .control-panel {
+            background: var(--panel-bg);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto 10px auto;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            position: relative;
+        }
+        .control-panel input, .control-panel select, .control-panel button {
+            padding: 6px 8px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--panel-bg);
+            color: var(--text-color);
+        }
+        .control-panel button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .control-panel button:hover {
+            background-color: #0056b3;
+        }
+        .section-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            background: var(--section-bg);
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        #viewport {
+            position: relative;
+            width: 100vw;
+            height: 72vh;
+            background: var(--viewport-bg);
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            cursor: grab;
+        }
+        #viewport:active {
+            cursor: grabbing;
+        }
+        #canvas {
+            position: absolute;
+            width: 6000px;
+            height: 6000px;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+        }
+        /* 화살표 및 선 그룹 (원 뒤쪽 레이어: z-index: 1) */
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6000px;
+            height: 6000px;
+            z-index: 1;
+            pointer-events: none;
+            overflow: visible;
+        }
+        /* 인물 노드 (원 앞쪽 레이어: z-index: 2) */
+        .person-node {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: grab;
+            border: 4px solid #333;
+            user-select: none;
+            z-index: 2;
+            background-color: var(--node-bg);
+            transition: opacity 0.2s;
+        }
+        .person-node.filtered-out {
+            opacity: 0.2;
+        }
+        .person-node:active {
+            cursor: grabbing;
+        }
+        .person-node img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            opacity: 0.65;
+        }
+        .person-name {
+            position: relative;
+            z-index: 3;
+            font-size: 13px;
+            font-weight: bold;
+            color: #000;
+            text-shadow: 1px 1px 2px #fff, -1px -1px 2px #fff, 1px -1px 2px #fff, -1px 1px 2px #fff;
+            text-align: center;
+            padding: 0 5px;
+            word-break: break-all;
+        }
+        [data-theme="dark"] .person-name {
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+        }
+        .endpoint-handle {
+            fill: white;
+            stroke: #333;
+            stroke-width: 2;
+            cursor: move;
+            pointer-events: auto;
+        }
+        .endpoint-handle:hover {
+            fill: #ffeb3b;
+        }
+        /* 모바일 대응 반응형 스타일 */
+        @media (max-width: 768px) {
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .section-group {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            #viewport {
+                height: 62vh;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <h1>✨ 프로 인물 관계도 메이커 ✨</h1>
+
+    <div class="control-panel">
+        <div class="section-group">
+            <button onclick="toggleDarkMode()" id="darkModeBtn" style="background:#6c757d; width:100%;">🌙 다크 모드</button>
+        </div>
+        <div class="section-group">
+            <strong>그룹</strong>
+            <input type="text" id="groupName" placeholder="그룹명" style="width: 60px;">
+            <input type="color" id="groupColor" value="#ff9800" style="width: 28px; height: 26px; border: none; cursor: pointer;">
+            <button onclick="addGroup()">추가</button>
+        </div>
+        <div class="section-group">
+            <strong>인물</strong>
+            <input type="text" id="personName" placeholder="이름" style="width: 60px;">
+            <input type="text" id="personImg" placeholder="이미지URL" style="width: 75px;">
+            <select id="personGroup" style="width: 80px;"><option value="">그룹없음</option></select>
+            <input type="color" id="personColor" value="#4CAF50" style="width: 28px; height: 26px; border: none; cursor: pointer;">
+            <button onclick="addPerson()">추가</button>
+        </div>
+        <div class="section-group">
+            <strong>검색</strong>
+            <input type="text" id="searchPerson" placeholder="인물 검색..." oninput="filterPersons()" style="width: 80px;">
+        </div>
+        <div class="section-group">
+            <strong>관계</strong>
+            <select id="fromPerson" style="width: 75px;"><option value="">출발</option></select>
+            <select id="toPerson" style="width: 75px;"><option value="">도착</option></select>
+            <select id="relationType" style="width: 60px;">
+                <option value="ally">아군</option>
+                <option value="enemy">적대</option>
+                <option value="other">기타</option>
+            </select>
+            <input type="text" id="relationText" placeholder="설명" style="width: 50px;">
+            <button onclick="addRelation()">연결</button>
+        </div>
+    </div>
+
+    <div id="viewport">
+        <div id="canvas">
+            <svg id="relationSvg">
+                <defs>
+                    <marker id="arrow-ally" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#007bff"/>
+                    </marker>
+                    <marker id="arrow-enemy" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc3545"/>
+                    </marker>
+                    <marker id="arrow-other" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#6c757d"/>
+                    </marker>
+                </defs>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        const persons = {};
+        const groups = {};
+        const relations = [];
+
+        let scale = 1;
+        let panX = 1000; 
+        let panY = 1000;
+        let isPanning = false;
+        let startPanX = 0, startPanY = 0;
+
+        const colors = {
+            ally: '#007bff',
+            enemy: '#dc3545',
+            other: '#6c757d'
+        };
+
+        const viewport = document.getElementById('viewport');
+        const canvas = document.getElementById('canvas');
+
+        updateTransform();
+
+        // 다크 모드 토글 함수
+        function toggleDarkMode() {
+            const body = document.body;
+            const btn = document.getElementById('darkModeBtn');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                btn.textContent = '☀️ 라이트 모드';
+                btn.style.background = '#f39c12';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                btn.textContent = '🌙 다크 모드';
+                btn.style.background = '#6c757d';
+            }
+        }
+
+        // 인물 검색 필터링 함수
+        function filterPersons() {
+            const query = document.getElementById('searchPerson').value.trim().toLowerCase();
+            const nodes = canvas.querySelectorAll('.person-node');
+            
+            nodes.forEach(node => {
+                const name = node.getAttribute('data-name').toLowerCase();
+                if (!query || name.includes(query)) {
+                    node.classList.remove('filtered-out');
+                } else {
+                    node.classList.add('filtered-out');
+                }
+            });
+        }
+
+        // 줌 기능 (모바일 터치 핀치 줌 고려 가능)
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomIntensity = 0.1;
+            let oldScale = scale;
+
+            if (e.deltaY < 0) {
+                scale *= (1 + zoomIntensity);
+            } else {
+                scale /= (1 + zoomIntensity);
+            }
+            scale = Math.max(0.15, Math.min(3, scale));
+
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            panX = mouseX - (mouseX - panX) * (scale / oldScale);
+            panY = mouseY - (mouseY - panY) * (scale / oldScale);
+
+            updateTransform();
+        }, { passive: false });
+
+        // 패닝(이동) 마우스 및 터치 이벤트 지원
+        viewport.addEventListener('mousedown', startPan);
+        window.addEventListener('mousemove', doPan);
+        window.addEventListener('mouseup', endPan);
+
+        // 모바일 터치 패닝 지원
+        viewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1 && (e.target === viewport || e.target === canvas || e.target.tagName === 'svg')) {
+                isPanning = true;
+                startPanX = e.touches[0].clientX - panX;
+                startPanY = e.touches[0].clientY - panY;
+            }
+        });
+        window.addEventListener('touchmove', (e) => {
+            if (isPanning && e.touches.length === 1) {
+                panX = e.touches[0].clientX - startPanX;
+                panY = e.touches[0].clientY - startPanY;
+                updateTransform();
+            }
+        });
+        window.addEventListener('touchend', endPan);
+
+        function startPan(e) {
+            if (e.target === viewport || e.target === canvas || e.target.tagName === 'svg' || e.target.tagName === 'defs' || e.target.tagName === 'marker') {
+                isPanning = true;
+                startPanX = e.clientX - panX;
+                startPanY = e.clientY - panY;
+            }
+        }
+        function doPan(e) {
+            if (isPanning) {
+                panX = e.clientX - startPanX;
+                panY = e.clientY - startPanY;
+                updateTransform();
+            }
+        }
+        function endPan() {
+            isPanning = false;
+        }
+
+        function updateTransform() {
+            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        function addGroup() {
+            const nameInput = document.getElementById('groupName');
+            const colorInput = document.getElementById('groupColor');
+            const name = nameInput.value.trim();
+            const color = colorInput.value;
+
+            if (!name) { alert('그룹명을 입력해주세요!'); return; }
+            if (groups[name]) { alert('이미 존재하는 그룹입니다.'); return; }
+
+            groups[name] = color;
+            nameInput.value = '';
+            updateGroupSelectOptions();
+            renderCanvas();
+        }
+
+        function updateGroupSelectOptions() {
+            const select = document.getElementById('personGroup');
+            select.innerHTML = '<option value="">그룹없음</option>';
+            for (let gName in groups) {
+                select.innerHTML += `<option value="${gName}">${gName}</option>`;
+            }
+        }
+
+        function addPerson() {
+            const nameInput = document.getElementById('personName');
+            const imgInput = document.getElementById('personImg');
+            const groupSelect = document.getElementById('personGroup');
+            const colorInput = document.getElementById('personColor');
+
+            const name = nameInput.value.trim();
+            const imgSrc = imgInput.value.trim();
+            const group = groupSelect.value;
+            const color = colorInput.value;
+
+            if (!name) { alert('인물 이름을 입력해주세요!'); return; }
+            if (persons[name]) { alert('이미 존재하는 이름입니다.'); return; }
+
+            const x = Math.max(100, Math.min(5800, -panX + (viewport.clientWidth / 2) + (Math.random() * 100 - 50)));
+            const y = Math.max(100, Math.min(5800, -panY + (viewport.clientHeight / 2) + (Math.random() * 100 - 50)));
+
+            persons[name] = { 
+                x, y, 
+                img: imgSrc || '', 
+                group: group, 
+                color: color 
+            };
+
+            nameInput.value = '';
+            imgInput.value = '';
+            updateSelectOptions();
+            renderCanvas();
+            filterPersons();
+        }
+
+        function updateSelectOptions() {
+            const fromSelect = document.getElementById('fromPerson');
+            const toSelect = document.getElementById('toPerson');
+            
+            fromSelect.innerHTML = '<option value="">출발</option>';
+            toSelect.innerHTML = '<option value="">도착</option>';
+
+            for (let name in persons) {
+                fromSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                toSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+        }
+
+        function addRelation() {
+            const from = document.getElementById('fromPerson').value;
+            const to = document.getElementById('toPerson').value;
+            const type = document.getElementById('relationType').value;
+            const text = document.getElementById('relationText').value.trim();
+
+            if (!from || !to) { alert('출발 인물과 도착 인물을 모두 선택해주세요.'); return; }
+            if (from === to) { alert('자기 자신과는 연결할 수 없습니다.'); return; }
+
+            relations.push({
+                id: Date.now() + Math.random(),
+                from,
+                to,
+                type,
+                text: text || '',
+                customX1: null, customY1: null,
+                customX2: null, customY2: null
+            });
+
+            document.getElementById('relationText').value = '';
+            renderCanvas();
+        }
+
+        function renderCanvas() {
+            const svg = document.getElementById('relationSvg');
+
+            canvas.querySelectorAll('.person-node').forEach(n => n.remove());
+
+            svg.innerHTML = `
+                <defs>
+                    <marker id="arrow-ally" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#007bff"/>
+                    </marker>
+                    <marker id="arrow-enemy" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc3545"/>
+                    </marker>
+                    <marker id="arrow-other" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#6c757d"/>
+                    </marker>
+                </defs>
+            `;
+
+            // 1. 관계선 렌더링 (원 뒤쪽 레이어에 배치되므로 동그라미에 가려지지 않고 깔끔하게 뒤로 지나감)
+            relations.forEach((rel, index) => {
+                const p1 = persons[rel.from];
+                const p2 = persons[rel.to];
+                if (!p1 || !p2) return;
+
+                const defX1 = p1.x + 45; 
+                const defY1 = p1.y + 45;
+                const defX2 = p2.x + 45;
+                const defY2 = p2.y + 45;
+
+                const x1 = rel.customX1 !== null ? rel.customX1 : defX1;
+                const y1 = rel.customY1 !== null ? rel.customY1 : defY1;
+                const x2 = rel.customX2 !== null ? rel.customX2 : defX2;
+                const y2 = rel.customY2 !== null ? rel.customY2 : defY2;
+
+                const color = colors[rel.type] || '#6c757d';
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '3');
+                line.setAttribute('marker-end', `url(#arrow-${rel.type})`);
+                g.appendChild(line);
+
+                const handle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                handle1.setAttribute('cx', x1);
+                handle1.setAttribute('cy', y1);
+                handle1.setAttribute('r', '6');
+                handle1.setAttribute('class', 'endpoint-handle');
+                handle1.onmousedown = (e) => startEndpointDrag(e, index, 'start');
+                g.appendChild(handle1);
+
+                const handle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                handle2.setAttribute('cx', x2);
+                handle2.setAttribute('cy', y2);
+                handle2.setAttribute('r', '6');
+                handle2.setAttribute('class', 'endpoint-handle');
+                handle2.onmousedown = (e) => startEndpointDrag(e, index, 'end');
+                g.appendChild(handle2);
+
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+
+                const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+                fo.setAttribute('x', midX - 50);
+                fo.setAttribute('y', midY - 15);
+                fo.setAttribute('width', '100');
+                fo.setAttribute('height', '30');
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = rel.text;
+                input.placeholder = '관계 설명';
+                input.style.width = '94px';
+                input.style.fontSize = '11px';
+                input.style.textAlign = 'center';
+                input.style.border = `1px solid ${color}`;
+                input.style.borderRadius = '3px';
+                input.style.background = 'rgba(255,255,255,0.95)';
+                input.style.color = '#000';
+                input.style.padding = '2px';
+                
+                input.oninput = (e) => { rel.text = e.target.value; };
+
+                fo.appendChild(input);
+                g.appendChild(fo);
+                svg.appendChild(g);
+            });
+
+            // 2. 인물 노드 렌더링 (원 앞쪽 레이어)
+            for (let name in persons) {
+                const p = persons[name];
+                const node = document.createElement('div');
+                node.className = 'person-node';
+                node.setAttribute('data-name', name);
+                node.style.left = p.x + 'px';
+                node.style.top = p.y + 'px';
+
+                let nodeBorderColor = p.color;
+                if (p.group && groups[p.group]) {
+                    nodeBorderColor = groups[p.group];
+                }
+                node.style.borderColor = nodeBorderColor;
+
+                let imgTag = p.img ? `<img src="${p.img}" alt="${name}">` : '';
+
+                node.innerHTML = `
+                    ${imgTag}
+                    <div class="person-name">${name}</div>
+                `;
+
+                makePersonDraggable(node, name);
+                canvas.appendChild(node);
+            }
+            filterPersons();
+        }
+
+        function makePersonDraggable(elm, name) {
+            let startX = 0, startY = 0;
+
+            elm.onmousedown = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startX = e.clientX;
+                startY = e.clientY;
+
+                document.onmouseup = closeDrag;
+                document.onmousemove = elementDrag;
+            };
+
+            // 모바일 터치 드래그 지원
+            elm.ontouchstart = (e) => {
+                if(e.touches.length === 1) {
+                    e.stopPropagation();
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+
+                    document.ontouchend = closeTouchDrag;
+                    document.ontouchmove = elementTouchDrag;
+                }
+            };
+
+            function elementDrag(e) {
+                e.preventDefault();
+                const dx = (e.clientX - startX) / scale;
+                const dy = (e.clientY - startY) / scale;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                persons[name].x += dx;
+                persons[name].y += dy;
+
+                elm.style.left = persons[name].x + 'px';
+                elm.style.top = persons[name].y + 'px';
+
+                renderCanvas();
+            }
+
+            function elementTouchDrag(e) {
+                if(e.touches.length === 1) {
+                    const dx = (e.touches[0].clientX - startX) / scale;
+                    const dy = (e.touches[0].clientY - startY) / scale;
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+
+                    persons[name].x += dx;
+                    persons[name].y += dy;
+
+                    elm.style.left = persons[name].x + 'px';
+                    elm.style.top = persons[name].y + 'px';
+
+                    renderCanvas();
+                }
+            }
+
+            function closeDrag() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            function closeTouchDrag() {
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        function startEndpointDrag(e, relIndex, targetType) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            function onMouseMove(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale;
+                const y = (e.clientY - rect.top) / scale;
+
+                if (targetType === 'start') {
+                    relations[relIndex].customX1 = x;
+                    relations[relIndex].customY1 = y;
+                } else {
+                    relations[relIndex].customX2 = x;
+                    relations[relIndex].customY2 = y;
+                }
+                renderCanvas();
+            }
+
+            function onMouseUp(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / scale;
+                const y = (e.clientY - rect.top) / scale;
+
+                for (let name in persons) {
+                    const p = persons[name];
+                    if (x >= p.x && x <= p.x + 90 && y >= p.y && y <= p.y + 90) {
+                        if (targetType === 'start') {
+                            relations[relIndex].from = name;
+                            relations[relIndex].customX1 = null;
+                            relations[relIndex].customY1 = null;
+                        } else {
+                            relations[relIndex].to = name;
+                            relations[relIndex].customX2 = null;
+                            relations[relIndex].customY2 = null;
+                        }
+                        break;
+                    }
+                }
+
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                renderCanvas();
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
+    </script>
+</body>
+</html>

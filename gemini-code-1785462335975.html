@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고2 국·영·수 전략 학습 대시보드</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --primary: #2563eb;
+            --primary-dark: #1e3a8a;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.08), 0 8px 10px -6px rgba(37, 99, 235, 0.08);
+            --header-bg: #1e3a8a;
+            --header-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --bg-main: #090d16;
+            --card-bg: #111827;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --primary: #3b82f6;
+            --primary-dark: #60a5fa;
+            --border-color: #1f2937;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --header-bg: #1e1b4b;
+            --header-text: #f1f5f9;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        body {
+            font-family: 'Noto Sans KR', 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Top Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 30px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover { opacity: 0.9; }
+
+        .theme-toggle {
+            background: var(--border-color);
+            color: var(--text-main);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Layout Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+        }
+
+        @media(max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Sidebar / Subject Navigation */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Subject Tabs */
+        .subject-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .subject-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subject-btn.active, .subject-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* Top Widgets Row */
+        .widgets-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .stat-info h4 { color: var(--text-sub); font-size: 14px; margin-bottom: 5px; }
+        .stat-info .value { font-size: 24px; font-weight: 700; font-family: 'Poppins'; }
+
+        /* Timer & Progress Section */
+        .timer-section {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .timer-display {
+            font-family: 'Poppins', sans-serif;
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+
+        .timer-setting-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .timer-setting-group select, .timer-setting-group input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .progress-container {
+            background: var(--border-color);
+            border-radius: 10px;
+            height: 16px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+
+        /* To-Do & Vocabulary Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        @media(max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .todo-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .todo-input-group input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .todo-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background: var(--bg-main);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .todo-item.completed span {
+            text-decoration: line-through;
+            color: var(--text-sub);
+        }
+
+        /* Bingo Grid */
+        .bingo-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .bingo-cell {
+            aspect-ratio: 1;
+            background: var(--bg-main);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            user-select: none;
+        }
+
+        .bingo-cell.checked {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #d97706;
+        }
+
+        /* Motivation & Quote */
+        .quote-box {
+            font-style: italic;
+            text-align: center;
+            color: var(--text-sub);
+            padding: 20px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="navbar">
+        <div class="logo">
+            <i class="fa-solid fa-graduation-cap"></i> Grade 11 Strategy Planner
+        </div>
+        <div class="nav-right">
+            <button class="btn" id="addSubjectBtn"><i class="fa-solid fa-plus"></i> 과목 추가</button>
+            <button class="theme-toggle" id="themeToggle" title="테마 변경"><i class="fa-solid fa-moon"></i></button>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <aside class="sidebar">
+            <div class="card">
+                <div class="card-header">과목별 대시보드</div>
+                <div class="card-body">
+                    <div class="subject-list" id="subjectList">
+                        <button class="subject-btn active" data-subject="all">
+                            <span><i class="fa-solid fa-house" style="margin-right:10px;"></i> 전체 대시보드</span>
+                        </button>
+                        <button class="subject-btn" data-subject="korean">
+                            <span><i class="fa-solid fa-book" style="margin-right:10px;"></i> 국어</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        <button class="subject-btn" data-subject="english">
+                            <span><i class="fa-solid fa-language" style="margin-right:10px;"></i> 영어</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        <button class="subject-btn" data-subject="math">
+                            <span><i class="fa-solid fa-calculator" style="margin-right:10px;"></i> 수학</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-quote-left"></i> 오늘의 동기부여</div>
+                <div class="card-body">
+                    <div class="quote-box" id="dailyQuote">
+                        "불가능이란 노력하는 자의 사전에 없다."
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="widgets-row">
+                <div class="card">
+                    <div class="card-body stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+                        <div class="stat-info">
+                            <h4>연속 성공 스트릭</h4>
+                            <div class="value" id="streakValue" style="color: #f97316;">🔥 0 DAYS</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="stat-info">
+                            <h4>시험 D-Day 설정</h4>
+                            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                                <input type="date" id="examDateInput" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 13px; background: var(--card-bg); color: var(--text-main);">
+                                <button class="btn" id="setExamDateBtn" style="padding: 4px 8px; font-size: 12px;">확인</button>
+                            </div>
+                            <div class="value" id="dDayDisplay" style="color: #e11d48; margin-top: 4px; font-size: 20px;">D-Day 미설정</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="stat-info">
+                            <h4>오늘 목표 달성률</h4>
+                            <div class="value" id="achievementRate">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span><i class="fa-solid fa-stopwatch"></i> 스마트 타이머 & 달성도</span>
+                    <span id="currentSubjectTitle" style="font-size: 14px; opacity: 0.8;">[전체 모드]</span>
+                </div>
+                <div class="card-body timer-section">
+                    <div class="timer-setting-group">
+                        <label for="targetMinutesSelect">목표 시간 설정:</label>
+                        <select id="targetMinutesSelect">
+                            <option value="1">테스트용 (1분)</option>
+                            <option value="60">1시간 (60분)</option>
+                            <option value="120">2시간 (120분)</option>
+                            <option value="300" selected>5시간 (300분)</option>
+                        </select>
+                        <button class="btn" id="setTimerBtn" style="padding: 6px 12px; font-size: 13px;">적용</button>
+                    </div>
+
+                    <div class="timer-display" id="timerDisplay">00:00:00</div>
+                    <div class="timer-controls">
+                        <button class="btn" style="background: #22c55e;" id="startTimer"><i class="fa-solid fa-play"></i> 시작</button>
+                        <button class="btn" style="background: #eab308;" id="pauseTimer"><i class="fa-solid fa-pause"></i> 일시정지</button>
+                        <button class="btn" style="background: #ef4444;" id="resetTimer"><i class="fa-solid fa-rotate-right"></i> 초기화</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600;">
+                        <span>목표 시간 대비 달성률 (100% 달성 시 도장 자동 획득!)</span>
+                        <span id="progressText" style="color: var(--primary);">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-list-check"></i> 과목별 To-Do List</div>
+                    <div class="card-body">
+                        <div class="todo-input-group">
+                            <input type="text" id="todoInput" placeholder="새로운 공부 할 일을 입력하세요...">
+                            <button class="btn" id="addTodoBtn">추가</button>
+                        </div>
+                        <ul class="todo-list" id="todoList">
+                            </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-book-bookmark"></i> 일일 필수 영단어 (10개)</div>
+                    <div class="card-body">
+                        <div style="font-size: 13px; color: var(--text-sub); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>* 매일 자정 자동 초기화</span>
+                            <button class="btn" id="refreshVocabBtn" style="padding: 3px 8px; font-size: 11px;">단어 새로고침</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; max-height: 200px; overflow-y: auto;" id="vocabList">
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-stamp"></i> 학습 도장 빙고판 (목표 달성 보상)</div>
+                <div class="card-body" style="display: flex; flex-direction: column; align-items: center;">
+                    <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 15px; text-align: center;">매일 목표(타이머 100%)를 달성하면 순서대로 도장이 자동으로 찍힙니다!</p>
+                    <div class="bingo-board" style="width: 100%; max-width: 450px;" id="bingoBoard">
+                        </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    // --- 데이터 저장 및 로드 (LocalStorage 연동) ---
+    let streak = parseInt(localStorage.getItem('study_streak')) || 0;
+    let lastActiveDate = localStorage.getItem('study_lastDate') || '';
+    let currentStampCount = parseInt(localStorage.getItem('study_stamps')) || 0;
+    let examDateStr = localStorage.getItem('study_examDate') || '';
+
+    // --- 자정 기준 연속 성공 스트릭 체크 로직 ---
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (lastActiveDate !== todayStr) {
+        // 어제 날짜 확인
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yestStr = yesterday.toISOString().slice(0, 10);
+
+        if (lastActiveDate !== yestStr && lastActiveDate !== '') {
+            // 하루 이상 건너뛰었으면 실패 처리 -> 스트릭 0 초기화
+            streak = 0;
+            localStorage.setItem('study_streak', streak);
+        }
+    }
+    document.getElementById('streakValue').innerText = `🔥 ${streak} DAYS`;
+
+    // --- 다크모드 / 화이트모드 토글 ---
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = htmlElement.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            htmlElement.setAttribute('data-theme', 'light');
+            themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        } else {
+            htmlElement.setAttribute('data-theme', 'dark');
+            themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+        }
+    });
+
+    // --- D-Day 설정 상호작용 ---
+    const examDateInput = document.getElementById('examDateInput');
+    const setExamDateBtn = document.getElementById('setExamDateBtn');
+    const dDayDisplay = document.getElementById('dDayDisplay');
+
+    if (examDateStr) {
+        examDateInput.value = examDateStr;
+        calcDDay(examDateStr);
+    }
+
+    setExamDateBtn.addEventListener('click', () => {
+        const val = examDateInput.value;
+        if (val) {
+            localStorage.setItem('study_examDate', val);
+            calcDDay(val);
+            alert("시험 날짜가 설정되었습니다!");
+        }
+    });
+
+    function calcDDay(targetDate) {
+        const target = new Date(targetDate);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        target.setHours(0,0,0,0);
+        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+            dDayDisplay.innerText = `D - ${diffDays}`;
+        } else if (diffDays === 0) {
+            dDayDisplay.innerText = `D - DAY!`;
+        } else {
+            dDayDisplay.innerText = `시험 종료됨`;
+        }
+    }
+
+    // --- 과목별 대시보드 데이터 및 전환 ---
+    const db = {
+        all: { title: "전체 대시보드", todos: [{text: "국영수 전체 균형 학습하기", done: false}] },
+        korean: { title: "국어 대시보드", todos: [{text: "기출 모의고사 비문학 2세트 분석", done: false}] },
+        english: { title: "영어 대시보드", todos: [{text: "수능특강 영단어 암기 및 구문 분석", done: false}] },
+        math: { title: "수학 대시보드", todos: [{text: "미적분 수능 기출 20문제 풀이", done: false}] }
+    };
+
+    let currentActiveSubject = 'all';
+    const subjectButtons = document.querySelectorAll('.subject-btn');
+    const currentSubjectTitle = document.getElementById('currentSubjectTitle');
+    const todoListElement = document.getElementById('todoList');
+
+    function renderTodos() {
+        todoListElement.innerHTML = '';
+        const currentTodos = db[currentActiveSubject].todos;
+        currentTodos.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = `todo-item ${item.done ? 'completed' : ''}`;
+            li.innerHTML = `
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-grow: 1;">
+                    <input type="checkbox" ${item.done ? 'checked' : ''} data-index="${index}"> 
+                    <span>${item.text}</span>
+                </label>
+                <i class="fa-solid fa-trash delete-todo" data-index="${index}" style="color: #ef4444; cursor: pointer;"></i>
+            `;
+            todoListElement.appendChild(li);
+        });
+    }
+
+    subjectButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            subjectButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentActiveSubject = btn.getAttribute('data-subject');
+            const subjectName = btn.querySelector('span').innerText.trim();
+            currentSubjectTitle.innerText = `[${subjectName} 모드]`;
+            renderTodos();
+        });
+    });
+
+    // 과목 추가 버튼
+    document.getElementById('addSubjectBtn').addEventListener('click', () => {
+        const newSubName = prompt("추가할 과목 이름을 입력하세요 (예: 탐구, 한국사):");
+        if (newSubName && newSubName.trim() !== "") {
+            const key = 'sub_' + Date.now();
+            db[key] = { title: newSubName + " 대시보드", todos: [] };
+            
+            const subjectListContainer = document.getElementById('subjectList');
+            const newBtn = document.createElement('button');
+            newBtn.className = 'subject-btn';
+            newBtn.setAttribute('data-subject', key);
+            newBtn.innerHTML = `<span><i class="fa-solid fa-book-open" style="margin-right:10px;"></i> ${newSubName}</span><i class="fa-solid fa-chevron-right"></i>`;
+            
+            newBtn.addEventListener('click', () => {
+                document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+                newBtn.classList.add('active');
+                currentActiveSubject = key;
+                currentSubjectTitle.innerText = `[${newSubName} 모드]`;
+                renderTodos();
+            });
+            subjectListContainer.appendChild(newBtn);
+            alert(`'${newSubName}' 과목이 추가되었습니다!`);
+        }
+    });
+
+    // To-Do 관리
+    const addTodoBtn = document.getElementById('addTodoBtn');
+    const todoInput = document.getElementById('todoInput');
+
+    function addTodo() {
+        const text = todoInput.value.trim();
+        if(text) {
+            db[currentActiveSubject].todos.push({ text: text, done: false });
+            todoInput.value = '';
+            renderTodos();
+        }
+    }
+
+    addTodoBtn.addEventListener('click', addTodo);
+    todoInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addTodo(); });
+
+    todoListElement.addEventListener('click', (e) => {
+        const index = e.target.getAttribute('data-index');
+        if (index !== null) {
+            if (e.target.tagName === 'INPUT') {
+                db[currentActiveSubject].todos[index].done = e.target.checked;
+                renderTodos();
+            } else if (e.target.classList.contains('delete-todo')) {
+                db[currentActiveSubject].todos.splice(index, 1);
+                renderTodos();
+            }
+        }
+    });
+
+    // --- 스마트 타이머 & 도장 및 스트릭 연동 로직 ---
+    let timerInterval = null;
+    let totalSeconds = 0;
+    let targetSeconds = 300 * 60; // 기본 5시간
+    let isGoalAchievedToday = false;
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startTimerBtn = document.getElementById('startTimer');
+    const pauseTimerBtn = document.getElementById('pauseTimer');
+    const resetTimerBtn = document.getElementById('resetTimer');
+    const targetMinutesSelect = document.getElementById('targetMinutesSelect');
+    const setTimerBtn = document.getElementById('setTimerBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const achievementRate = document.getElementById('achievementRate');
+
+    setTimerBtn.addEventListener('click', () => {
+        const minutes = parseInt(targetMinutesSelect.value);
+        targetSeconds = minutes * 60;
+        alert(`목표 시간이 ${minutes}분으로 설정되었습니다.`);
+        updateProgress();
+    });
+
+    function formatTime(sec) {
+        const hrs = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const secs = String(sec % 60).padStart(2, '0');
+        return `${hrs}:${mins}:${secs}`;
+    }
+
+    function checkGoalAchievement() {
+        if (!isGoalAchievedToday && totalSeconds >= targetSeconds) {
+            isGoalAchievedToday = true;
+            // 목표 달성 성공 시 스트릭 증가
+            streak++;
+            localStorage.setItem('study_streak', streak);
+            localStorage.setItem('study_lastDate', todayStr);
+            document.getElementById('streakValue').innerText = `🔥 ${streak} DAYS`;
+
+            // 도장 하나 자동 획득 및 빙고판 채우기
+            if (currentStampCount < 25) {
+                currentStampCount++;
+                localStorage.setItem('study_stamps', currentStampCount);
+                renderBingo();
+                alert("🎉 오늘의 목표 시간을 달성했습니다! 연속 스트릭이 오르고 도장이 찍혔습니다!");
+                if (currentStampCount === 25) {
+                    alert("🏆 축하합니다! 5x5 빙고를 모두 완성했습니다!");
+                }
+            }
+        }
+    }
+
+    function updateProgress() {
+        let percent = Math.min(100, Math.floor((totalSeconds / targetSeconds) * 100));
+        progressBar.style.width = percent + '%';
+        progressText.innerText = percent + '%';
+        achievementRate.innerText = percent + '%';
+
+        if (percent >= 100) {
+            checkGoalAchievement();
+        }
+    }
+
+    startTimerBtn.addEventListener('click', () => {
+        if(timerInterval) return;
+        timerInterval = setInterval(() => {
+            totalSeconds++;
+            timerDisplay.innerText = formatTime(totalSeconds);
+            updateProgress();
+        }, 1000);
+    });
+
+    pauseTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    });
+
+    resetTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        totalSeconds = 0;
+        timerDisplay.innerText = "00:00:00";
+        updateProgress();
+    });
+
+    // --- 일일 영단어 모듈 ---
+    const vocabPool = [
+        {en: "Signify", kr: "의미하다"}, {en: "Overtake", kr: "추월하다"}, 
+        {en: "Meanwhile", kr: "그동안에"}, {en: "Proximity", kr: "근접"}, 
+        {en: "Perspective", kr: "관점"}, {en: "Consistent", kr: "일관된"}, 
+        {en: "Vital", kr: "필수적인"}, {en: "Acquire", kr: "습득하다"}, 
+        {en: "Objective", kr: "목표"}, {en: "Evaluate", kr: "평가하다"},
+        {en: "Alternative", kr: "대안의"}, {en: "Sophisticated", kr: "정교한"}
+    ];
+
+    function loadRandomVocab() {
+        const shuffled = [...vocabPool].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 10);
+        const vocabListContainer = document.getElementById('vocabList');
+        vocabListContainer.innerHTML = '';
+        selected.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.style.padding = "6px";
+            div.style.background = "var(--bg-main)";
+            div.style.borderRadius = "6px";
+            div.innerHTML = `<strong>${idx+1}. ${item.en}</strong> (${item.kr})`;
+            vocabListContainer.appendChild(div);
+        });
+    }
+
+    document.getElementById('refreshVocabBtn').addEventListener('click', loadRandomVocab);
+
+    // --- 빙고판 & 도장 시스템 렌더링 ---
+    const bingoBoard = document.getElementById('bingoBoard');
+    function renderBingo() {
+        bingoBoard.innerHTML = '';
+        for(let i = 1; i <= 25; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'bingo-cell';
+            if (i <= currentStampCount) {
+                cell.classList.add('checked');
+                cell.innerHTML = '<i class="fa-solid fa-stamp"></i>';
+            } else {
+                cell.innerText = i;
+            }
+            bingoBoard.appendChild(cell);
+        }
+    }
+
+    // 오늘의 명언
+    const quotes = [
+        "지금 잠을 자면 꿈을 꾸지만, 지금 공부하면 꿈을 이룬다.",
+        "학습은 은근히 찾아오는 보석과 같다.",
+        "오늘 흘린 땀방울이 내일의 합격증이 된다.",
+        "가장 큰 위험은 위험을 감수하지 않는 것이다."
+    ];
+    document.getElementById('dailyQuote').innerText = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
+
+    // 초기 실행
+    renderTodos();
+    loadRandomVocab();
+    renderBingo();
+</script>
+
+</body>
+</html>

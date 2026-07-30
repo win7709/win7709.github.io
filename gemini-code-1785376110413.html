@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹 개발 3대 핵심 기술 익스트림 울트라 마스터 가이드 (레이아웃 최적화)</title>
+    <style>
+        :root {
+            --bg-color: #030712;
+            --card-bg: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --primary: #38bdf8;
+            --html-color: #f97316;
+            --css-color: #3b82f6;
+            --js-color: #eab308;
+        }
+
+        * {
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0f172a, #030712);
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            padding: 5rem 1rem 4rem 1rem;
+        }
+
+        header h1 {
+            font-size: 3.4rem;
+            margin: 0;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #eab308);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .container {
+            max-width: 1350px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .nav-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 3.5rem;
+            text-align: center;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        .nav-box h3 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-list a {
+            text-decoration: none;
+            background-color: #1e293b;
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-list a:hover {
+            background-color: var(--primary);
+            color: #030712;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3.5rem;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        section h2 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #html-sec h2 { color: var(--html-color); }
+        #css-sec h2 { color: var(--css-color); }
+        #js-sec h2 { color: var(--js-color); }
+
+        .concept-desc {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            line-height: 1.9;
+        }
+
+        .concept-desc ul {
+            padding-left: 22px;
+            margin-top: 15px;
+        }
+
+        .concept-desc li {
+            margin-bottom: 10px;
+        }
+
+        /* 변경된 가로 비율: 코드 영역(4) : 상호작용 영역(6) */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 4fr 6fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 1000px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .code-block {
+            background-color: #010409;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.78rem;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin: 0;
+            height: 100%;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+
+        .effect-panel {
+            background-color: #030712;
+            border: 2px dashed #334155;
+            padding: 2rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 380px;
+        }
+
+        .interactive-btn {
+            background-color: var(--primary);
+            color: #030712;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .interactive-btn:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(56, 189, 248, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            margin-top: 5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>웹 개발 3대 핵심 기술 익스트림 울트라 마스터 가이드</h1>
+        <p>코드 영역 가로폭은 좁히고, 상호작용 실행 결과 패널 가로폭은 대폭 넓힌 최적화 레이아웃</p>
+    </header>
+
+    <div class="container">
+        <nav class="nav-box">
+            <h3>📌 빠른 목차 이동</h3>
+            <ul class="nav-list">
+                <li><a href="#html-sec">1. HTML 극한 심화 & 제어</a></li>
+                <li><a href="#css-sec">2. CSS 고급 디자인 & 시각 효과</a></li>
+                <li><a href="#js-sec">3. JavaScript 지능형 로직</a></li>
+            </ul>
+        </nav>
+
+        <section id="html-sec">
+            <h2>1. HTML (HyperText Markup Language) - 극한 심화</h2>
+            <div class="concept-desc">
+                <p><strong>익스트림 심화:</strong> HTML5는 시멘틱 구조화뿐만 아니라 다중 데이터 속성(data-*), 드래그 앤 드롭 API 지원, 오디오/비디오 메타데이터 제어 등 웹 애플리케이션의 뼈대를 다각도로 지탱합니다.</p>
+                <ul>
+                    <li><strong>커스텀 데이터 속성:</strong> <code>data-*</code>를 활용해 HTML 요소 내부에 숨겨진 상태값을 보관합니다.</li>
+                    <li><strong>콘텐츠 편집 가능화(contenteditable):</strong> 정적인 문서 요소를 실시간 편집 가능한 에디터로 전환합니다.</li>
+                    <li><strong>실시간 글자 수 카운팅 및 폼 검증:</strong> 사용자 입력값을 실시간으로 추적하여 글자 길이를 제어합니다.</li>
+                </ul>
+            </div>
+            <div class="content-grid">
+                <div>
+                    <div class="panel-title">💻 HTML 코드 예시 (컴팩트)</div>
+                    <pre class="code-block"><code>&lt;!-- 실시간 글자수 제한 폼 --&gt;
+&lt;textarea id="liveTextarea" placeholder="내용 입력..." oninput="checkLength(this)"&gt;&lt;/textarea&gt;
+&lt;p id="charCount"&gt;글자 수: 0자 (최대 100자)&lt;/p&gt;
+
+&lt;!-- 데이터 및 편집 슬롯 --&gt;
+&lt;div data-role="admin" id="dataBox"&gt;권한 메타데이터&lt;/div&gt;</code></pre>
+                </div>
+                <div>
+                    <div class="panel-title">✨ 상호작용 실행 결과 (확장된 와이드 패널)</div>
+                    <div class="effect-panel">
+                        <div id="htmlTargetBox" data-role="일반 사용자" style="padding: 12px; background: #1e293b; border-radius: 8px; width: 100%; margin-bottom: 8px; border: 1px solid #475569;">
+                            <p id="htmlDataDisplay" style="margin:0; font-weight: bold; color: #f97316; font-size: 0.9rem;">현재 메타 상태: [권한: 일반 사용자]</p>
+                        </div>
+                        <textarea id="liveTextareaBox" placeholder="여기에 타이핑하면 글자 수가 실시간 카운트됩니다..." oninput="updateCharCount(this)" style="width: 100%; height: 60px; padding: 8px; border-radius: 6px; border: 1px solid #38bdf8; background: #010409; color: white; resize: none; font-size: 0.85rem; margin-bottom: 6px;"></textarea>
+                        <p id="charCountDisplay" style="margin: 0 0 10px 0; font-size: 0.8rem; color: #94a3b8;">글자 수: 0자 (안전 범위)</p>
+                        
+                        <progress id="htmlProgressBar" value="40" max="100" style="width: 100%; height: 14px; margin-bottom: 10px;"></progress>
+                        
+                        <div class="button-group">
+                            <button class="interactive-btn" style="background:#f97316; color:white;" onclick="htmlDeepAction('toggleRole')">메타데이터 토글</button>
+                            <button class="interactive-btn" style="background:#0ea5e9; color:white;" onclick="htmlDeepAction('progressUp')">진행바 +25%</button>
+                            <button class="interactive-btn" style="background:#10b981; color:white;" onclick="htmlNewAction('fillSample')">샘플 입력</button>
+                            <button class="interactive-btn" style="background:#a855f7; color:white;" onclick="htmlNewAction('uppercaseText')">대문자 변환</button>
+                            <button class="interactive-btn" style="background:#ef4444; color:white;" onclick="htmlNewAction('clearAll')">전체 초기화</button>
+                            <button class="interactive-btn" style="background:#64748b; color:white;" onclick="htmlDeepAction('resetHTMLAll')">기본값 리셋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="css-sec">
+            <h2>2. CSS (Cascading Style Sheets) - 고급 디자인 심화</h2>
+            <div class="concept-desc">
+                <p><strong>익스트림 심화:</strong> CSS3는 Flexbox/Grid 레이아웃을 넘어 글래스모피즘(Glassmorphism), 다차원 트랜스폼(3D 회전, 기울이기), 그라데이션 애니메이션 등 화려한 시각적 장치를 완벽히 구현합니다.</p>
+                <ul>
+                    <li><strong>글래스모피즘 효과:</strong> <code>backdrop-filter</code>를 활용해 반투명 유리 질감을 연출합니다.</li>
+                    <li><strong>3D 입체 변환:</strong> <code>transform: perspective()</code>를 통한 공간감 부여.</li>
+                    <li><strong>3D 카드 플립 및 동적 그라데이션:</strong> 카드가 뒤집히거나 화려한 색상 흐름을 시뮬레이션합니다.</li>
+                </ul>
+            </div>
+            <div class="content-grid">
+                <div>
+                    <div class="panel-title">💻 CSS 코드 예시 (컴팩트)</div>
+                    <pre class="code-block"><code>&lt;style&gt;
+  /* 카드 플립 효과 */
+  .card-flip {
+    transform: rotateY(180deg);
+    transition: transform 0.6s;
+  }
+  .gradient-flow {
+    background: linear-gradient(270deg, #3b82f6, #ec4899);
+  }
+&lt;/style&gt;</code></pre>
+                </div>
+                <div>
+                    <div class="panel-title">✨ 상호작용 실행 결과 (확장된 와이드 패널)</div>
+                    <div class="effect-panel" id="cssAdvancedBox" style="background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 12px; transition: all 0.5s ease;">
+                        <h4 id="cssTitleText" style="margin:0 0 5px 0; color: #38bdf8;">고급 CSS 스타일 시뮬레이터</h4>
+                        <p id="cssDescText" style="margin:0 0 15px 0; font-size: 0.85rem; color: #94a3b8;">하단의 다양한 스타일 제어 버튼을 눌러보세요.</p>
+                        
+                        <div class="button-group">
+                            <button class="interactive-btn" style="background:#3b82f6; color:white;" onclick="cssDeepAction('glass')">글래스모피즘</button>
+                            <button class="interactive-btn" style="background:#10b981; color:white;" onclick="cssDeepAction('tilt3d')">3D 틸트</button>
+                            <button class="interactive-btn" style="background:#8b5cf6; color:white;" onclick="cssDeepAction('borderBeam')">네온 테두리</button>
+                            <button class="interactive-btn" style="background:#ec4899; color:white;" onclick="cssNewAction('cardFlip')">3D 플립</button>
+                            <button class="interactive-btn" style="background:#f59e0b; color:white;" onclick="cssNewAction('neonPulse')">펄스 발광</button>
+                            <button class="interactive-btn" style="background:#06b6d4; color:white;" onclick="cssNewAction('cyberpunk')">사이버펑크</button>
+                            <button class="interactive-btn" style="background:#475569; color:white;" onclick="cssDeepAction('resetCSS')">초기화</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="js-sec">
+            <h2>3. JavaScript (JS) - 지능형 로직 심화</h2>
+            <div class="concept-desc">
+                <p><strong>익스트림 심화:</strong> 자바스크립트는 웹 애플리케이션의 브레인으로서 비동기 제어(Promise, async/await 모사), 로컬 스토리지 데이터 영구 저장, 동적 리스트 필터링 및 통계 연산 등의 고급 로직을 수행합니다.</p>
+                <ul>
+                    <li><strong>로컬 스토리지 연동:</strong> 브라우저에 데이터를 영구적으로 기록하고 불러오는 상태 보존 기술.</li>
+                    <li><strong>비동기 타이머 및 로딩 상태:</strong> 서버 통신 대기 상태(Pending/Resolve)를 재현합니다.</li>
+                    <li><strong>행운의 번호 추첨 및 배열 연산:</strong> 무작위 난수 생성과 데이터 필터링 알고리즘을 제어합니다.</li>
+                </ul>
+            </div>
+            <div class="content-grid">
+                <div>
+                    <div class="panel-title">💻 JavaScript 코드 예시 (컴팩트)</div>
+                    <pre class="code-block"><code>// 무작위 번호 생성 알고리즘
+function generateLuckyNumbers() {
+    let numbers = Array.from({length: 5}, () => 
+        Math.floor(Math.random() * 45) + 1
+    );
+    return numbers.join(', ');
+}</code></pre>
+                </div>
+                <div>
+                    <div class="panel-title">✨ 상호작용 실행 결과 (확장된 와이드 패널)</div>
+                    <div class="effect-panel">
+                        <p style="margin:0 0 5px 0; font-size: 0.9rem; color: #94a3b8;">데이터베이스 시스템 제어판:</p>
+                        <h3 id="jsDataDisplay" style="font-size: 1.8rem; margin: 0 0 10px 0; color: #eab308;">[기록된 점수: 50]</h3>
+                        <p id="jsLogMsg" style="margin:0 0 15px 0; font-size: 0.82rem; color: #cbd5e1;">시스템 로그: 대기 중...</p>
+                        
+                        <div class="button-group">
+                            <button class="interactive-btn" style="background:#22c55e; color:white;" onclick="jsDeepAction('saveStorage')">스토리지 저장</button>
+                            <button class="interactive-btn" style="background:#0ea5e9; color:white;" onclick="jsDeepAction('loadStorage')">불러오기</button>
+                            <button class="interactive-btn" style="background:#a855f7; color:white;" onclick="jsDeepAction('calcSquare')">제곱 연산</button>
+                            <button class="interactive-btn" style="background:#f59e0b; color:white;" onclick="jsDeepAction('asyncFetch')">비동기 통신</button>
+                            <button class="interactive-btn" style="background:#ec4899; color:white;" onclick="jsNewAction('luckyDraw')">행운 번호 추첨</button>
+                            <button class="interactive-btn" style="background:#06b6d4; color:white;" onclick="jsNewAction('arrayFilter')">배열 필터</button>
+                            <button class="interactive-btn" style="background:#10b981; color:white;" onclick="jsNewAction('toggleMode')">모드 반전</button>
+                            <button class="interactive-btn" style="background:#ef4444; color:white;" onclick="jsDeepAction('clearData')">데이터 삭제</button>
+                            <button class="interactive-btn" style="background:#6b7280; color:white;" onclick="jsDeepAction('resetJS')">시스템 리셋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Web Development Core Guide. Ultimate Layout Optimized Version.</p>
+    </footer>
+
+    <script>
+        function htmlDeepAction(type) {
+            const box = document.getElementById('htmlTargetBox');
+            const display = document.getElementById('htmlDataDisplay');
+            const pBar = document.getElementById('htmlProgressBar');
+
+            if(type === 'toggleRole') {
+                const current = box.getAttribute('data-role');
+                const next = current === '일반 사용자' ? '시스템 최고 관리자 (Admin)' : '일반 사용자';
+                box.setAttribute('data-role', next);
+                display.innerText = "현재 메타 상태: [권한: " + next + "]";
+                display.style.color = next.includes('관리자') ? '#22c55e' : '#f97316';
+            } else if(type === 'progressUp') {
+                let val = parseInt(pBar.value) + 25;
+                if(val > 100) val = 100;
+                pBar.value = val;
+            } else if(type === 'resetHTMLAll') {
+                box.setAttribute('data-role', '일반 사용자');
+                display.innerText = "현재 메타 상태: [권한: 일반 사용자]";
+                display.style.color = "#f97316";
+                document.getElementById('liveTextareaBox').value = "";
+                document.getElementById('charCountDisplay').innerText = "글자 수: 0자 (안전 범위)";
+                pBar.value = 40;
+            }
+        }
+
+        function updateCharCount(textarea) {
+            const len = textarea.value.length;
+            const countDisplay = document.getElementById('charCountDisplay');
+            countDisplay.innerText = "글자 수: " + len + "자 (입력 중...)";
+            countDisplay.style.color = len > 80 ? "#ef4444" : "#94a3b8";
+        }
+
+        function htmlNewAction(type) {
+            const textarea = document.getElementById('liveTextareaBox');
+            if(type === 'fillSample') {
+                textarea.value = "웹 개발은 HTML, CSS, JavaScript의 삼위일체로 이루어집니다.";
+                updateCharCount(textarea);
+            } else if(type === 'uppercaseText') {
+                textarea.value = textarea.value.toUpperCase();
+            } else if(type === 'clearAll') {
+                textarea.value = "";
+                updateCharCount(textarea);
+            }
+        }
+
+        function cssDeepAction(type) {
+            const box = document.getElementById('cssAdvancedBox');
+            const title = document.getElementById('cssTitleText');
+            const desc = document.getElementById('cssDescText');
+
+            if(type === 'glass') {
+                box.style.background = 'rgba(56, 189, 248, 0.15)';
+                box.style.backdropFilter = 'blur(12px)';
+                box.style.border = '1px solid rgba(255,255,255,0.3)';
+                box.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)';
+                box.style.transform = 'scale(1)';
+                title.innerText = "글래스모피즘 효과 적용됨";
+                desc.innerText = "반투명 배경과 블러 처리로 현대적인 유리 질감을 구현했습니다.";
+            } else if(type === 'tilt3d') {
+                box.style.background = '#1e293b';
+                box.style.backdropFilter = 'none';
+                box.style.border = '1px solid #38bdf8';
+                box.style.boxShadow = '0 15px 30px rgba(56, 189, 248, 0.4)';
+                box.style.transform = 'perspective(600px) rotateX(10deg) rotateY(-8deg)';
+                title.innerText = "3D 공간 변환 적용됨";
+                desc.innerText = "perspective와 rotate 속성으로 입체적인 공간감을 부여했습니다.";
+            } else if(type === 'borderBeam') {
+                box.style.background = '#0f172a';
+                box.style.backdropFilter = 'none';
+                box.style.border = '3px solid #8b5cf6';
+                box.style.boxShadow = '0 0 25px rgba(139, 92, 246, 0.8)';
+                box.style.transform = 'scale(1)';
+                title.innerText = "네온 테두리 확장됨";
+                desc.innerText = "선명한 보라색 테두리와 그림자 발광 효과입니다.";
+            } else if(type === 'resetCSS') {
+                box.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                box.style.backdropFilter = 'none';
+                box.style.border = '2px dashed #334155';
+                box.style.boxShadow = 'none';
+                box.style.transform = 'scale(1)';
+                title.innerText = "고급 CSS 스타일 시뮬레이터";
+                desc.innerText = "하단의 다양한 스타일 제어 버튼을 눌러보세요.";
+            }
+        }
+
+        function cssNewAction(type) {
+            const box = document.getElementById('cssAdvancedBox');
+            const title = document.getElementById('cssTitleText');
+            const desc = document.getElementById('cssDescText');
+
+            if(type === 'cardFlip') {
+                box.style.transform = 'rotateY(180deg) scale(0.98)';
+                title.innerText = "신규: 3D 플립 시뮬레이션";
+                desc.innerText = "카드가 180도 회전하며 뒷면으로 뒤집히는 애니메이션 효과입니다.";
+            } else if(type === 'neonPulse') {
+                box.style.background = '#450a0a';
+                box.style.boxShadow = '0 0 35px rgba(239, 68, 68, 0.9)';
+                box.style.transform = 'scale(1.02)';
+                title.innerText = "신규: 펄스 발광 애니메이션";
+                desc.innerText = "강렬한 붉은빛이 맥박처럼 퍼지는 집중 효과입니다.";
+            } else if(type === 'cyberpunk') {
+                box.style.background = 'linear-gradient(135deg, #3b0764, #0f172a)';
+                box.style.border = '2px solid #06b6d4';
+                box.style.boxShadow = '0 0 25px rgba(6, 182, 212, 0.8)';
+                box.style.transform = 'skewX(-2deg)';
+                title.innerText = "신규: 사이버펑크 스타일";
+                desc.innerText = "기울어진 외형과 네온 시안 컬러의 미래지향적 감성입니다.";
+            }
+        }
+
+        let jsScoreValue = 50;
+        function jsDeepAction(type) {
+            const display = document.getElementById('jsDataDisplay');
+            const logMsg = document.getElementById('jsLogMsg');
+
+            if(type === 'saveStorage') {
+                localStorage.setItem('savedScore', jsScoreValue);
+                logMsg.innerText = "시스템 로그: 로컬 스토리지에 데이터 영구 저장 완료!";
+                logMsg.style.color = "#22c55e";
+            } else if(type === 'loadStorage') {
+                const saved = localStorage.getItem('savedScore');
+                if(saved !== null) {
+                    jsScoreValue = parseInt(saved);
+                    display.innerText = "[기록된 점수: " + jsScoreValue + "]";
+                    logMsg.innerText = "시스템 로그: 스토리지에서 데이터를 성공적으로 불러왔습니다.";
+                } else {
+                    logMsg.innerText = "시스템 로그 경고: 저장된 데이터가 존재하지 않습니다.";
+                    logMsg.style.color = "#ef4444";
+                }
+            } else if(type === 'calcSquare') {
+                jsScoreValue = jsScoreValue * jsScoreValue;
+                logMsg.innerText = "시스템 로그: 현재 값의 제곱 연산이 완료되었습니다.";
+            } else if(type === 'asyncFetch') {
+                logMsg.innerText = "시스템 로그: 서버 비동기 통신 중... (Pending)";
+                logMsg.style.color = "#f59e0b";
+                setTimeout(() => {
+                    jsScoreValue += 77;
+                    display.innerText = "[기록된 점수: " + jsScoreValue + "]";
+                    logMsg.innerText = "시스템 로그: 서버 통신 성공 및 데이터 갱신 완료! (Resolved)";
+                    logMsg.style.color = "#22c55e";
+                }, 800);
+                return;
+            } else if(type === 'clearData') {
+                localStorage.removeItem('savedScore');
+                logMsg.innerText = "시스템 로그: 브라우저 저장소가 깨끗하게 비워졌습니다.";
+                logMsg.style.color = "#ef4444";
+            } else if(type === 'resetJS') {
+                jsScoreValue = 50;
+                logMsg.innerText = "시스템 로그: 시스템 상태가 초기값으로 리셋되었습니다.";
+                logMsg.style.color = "#cbd5e1";
+            }
+
+            display.innerText = "[기록된 점수: " + jsScoreValue + "]";
+        }
+
+        function jsNewAction(type) {
+            const display = document.getElementById('jsDataDisplay');
+            const logMsg = document.getElementById('jsLogMsg');
+
+            if(type === 'luckyDraw') {
+                const luckyNums = Array.from({length: 3}, () => Math.floor(Math.random() * 100) + 1).join(', ');
+                display.innerText = "[행운 번호: " + luckyNums + "]";
+                logMsg.innerText = "시스템 로그: 무작위 난수 알고리즘으로 행운 번호를 추출했습니다.";
+                logMsg.style.color = "#ec4899";
+            } else if(type === 'arrayFilter') {
+                const rawArr = [12, 85, 34, 92, 45, 78];
+                const filtered = rawArr.filter(n => n > 50);
+                display.innerText = "[필터 결과: " + filtered.join(', ') + "]";
+                logMsg.innerText = "시스템 로그: 고차함수 filter()를 통해 50 초과 데이터만 추출했습니다.";
+                logMsg.style.color = "#06b6d4";
+            } else if(type === 'toggleMode') {
+                const isDark = document.body.style.backgroundColor === 'rgb(15, 23, 42)';
+                if(isDark) {
+                    document.body.style.backgroundColor = '#030712';
+                    logMsg.innerText = "시스템 로그: 딥다크 모드로 전환되었습니다.";
+                } else {
+                    document.body.style.backgroundColor = '#0f172a';
+                    logMsg.innerText = "시스템 로그: 네이비 다크 모드로 전환되었습니다.";
+                }
+                logMsg.style.color = "#10b981";
+            }
+        }
+    </script>
+</body>
+</html>

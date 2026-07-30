@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Ball Fight - 아레나 물리 배틀</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #121216;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        #select-screen {
+            background: radial-gradient(circle, #22223b 0%, #121216 100%);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 5px;
+            color: #f72585;
+            text-shadow: 0 0 15px rgba(247, 37, 133, 0.5);
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: #b5179e;
+            margin-bottom: 25px;
+        }
+
+        .roster-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 900px;
+            margin-bottom: 25px;
+        }
+
+        .character-card {
+            background: #1e1e24;
+            border: 2px solid #3f37c9;
+            border-radius: 12px;
+            padding: 12px;
+            width: 190px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            user-select: none;
+        }
+
+        .character-card:hover {
+            transform: translateY(-5px);
+            border-color: #4895ef;
+            box-shadow: 0 5px 15px rgba(72, 149, 239, 0.3);
+        }
+
+        .character-card.selected {
+            border-color: #f72585;
+            background: #2b1d3a;
+            box-shadow: 0 0 15px rgba(247, 37, 133, 0.5);
+        }
+
+        .character-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+            color: #4cc9f0;
+        }
+
+        .character-card .skill-desc {
+            font-size: 0.75rem;
+            color: #adb5bd;
+            line-height: 1.3;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #f72585 0%, #7209b7 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(114, 9, 183, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(247, 37, 133, 0.6);
+        }
+
+        .start-btn:disabled {
+            background: #495057;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        #arena-screen {
+            background: #0b090a;
+        }
+
+        .game-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 800px;
+            margin-bottom: 10px;
+        }
+
+        .status-box {
+            background: #1e1e24;
+            border: 2px solid #3f37c9;
+            padding: 10px 15px;
+            border-radius: 8px;
+            width: 320px;
+        }
+
+        .status-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 14px;
+            background: #2b2d42;
+            border-radius: 7px;
+            overflow: hidden;
+            margin-bottom: 3px;
+            border: 1px solid #4a4e69;
+            position: relative;
+        }
+
+        .hp-bar-fill {
+            height: 100%;
+            background: #4cc9f0;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .skill-bar-fill {
+            height: 100%;
+            background: #f72585;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .skill-time-label {
+            font-size: 0.7rem;
+            color: #adb5bd;
+            text-align: right;
+            margin-bottom: 5px;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #3a0ca3;
+        }
+
+        #game-canvas {
+            border: 4px solid #4cc9f0;
+            background: #161a1d;
+            box-shadow: 0 0 30px rgba(76, 201, 240, 0.2);
+            border-radius: 8px;
+        }
+
+        #result-screen {
+            background: rgba(18, 18, 22, 0.95);
+            z-index: 10;
+        }
+
+        .result-box {
+            background: #1e1e24;
+            border: 3px solid #f72585;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(247, 37, 133, 0.4);
+        }
+
+        .result-box h2 {
+            font-size: 3rem;
+            color: #4cc9f0;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .result-box p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="select-screen" class="screen active">
+        <h1>BALL FIGHT</h1>
+        <p class="subtitle">조형진 필살기 [미조] 0.9초 & 박배성 가시 2개 및 2배 데미지 적용</p>
+        <div class="roster-container" id="roster"></div>
+        <button id="start-game-btn" class="start-btn" disabled>게임 시작 (0/2)</button>
+    </div>
+
+    <div id="arena-screen" class="screen">
+        <div class="game-top-bar">
+            <div class="status-box">
+                <div class="status-title">
+                    <span id="p1-name" style="color: #ff595e;">P1 이름</span>
+                    <span id="p1-hp-text">200 / 200</span>
+                </div>
+                <div class="bar-container"><div id="p1-hp-bar" class="hp-bar-fill"></div></div>
+                <div class="skill-time-label" id="p1-skill-time">스킬 쿨타임: 0.0초</div>
+                <div class="bar-container" style="height: 8px;"><div id="p1-skill-bar" class="skill-bar-fill"></div></div>
+            </div>
+
+            <div class="control-btns">
+                <button class="control-btn" id="pause-btn" onclick="togglePause()">일시정지</button>
+                <button class="control-btn" style="background: #e63946;" onclick="goHome()">홈으로</button>
+            </div>
+
+            <div class="status-box">
+                <div class="status-title">
+                    <span id="p2-name" style="color: #ffca3a;">P2 이름</span>
+                    <span id="p2-hp-text">200 / 200</span>
+                </div>
+                <div class="bar-container"><div id="p2-hp-bar" class="hp-bar-fill" style="background: #ffca3a;"></div></div>
+                <div class="skill-time-label" id="p2-skill-time">스킬 쿨타임: 0.0초</div>
+                <div class="bar-container" style="height: 8px;"><div id="p2-skill-bar" class="skill-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="result-box">
+            <h2 id="winner-text">승리자 없음</h2>
+            <p id="winner-desc">경기가 종료되었습니다.</p>
+            <button class="start-btn" onclick="location.reload()">메인으로 돌아가기</button>
+        </div>
+    </div>
+
+<script>
+    const characters = [
+        { id: 'hyunwoong', name: '최현웅 볼', color: '#ff595e', desc: '돌진 & 상시 받는 데미지 감소 (체력 200)' },
+        { id: 'jaejun', name: '임재준 볼', color: '#ffca3a', desc: '랜덤 능력치 가챠 (스킬 쿨타임 99999999초) & 충돌 시 데미지 부여' },
+        { id: 'baesung', name: '박배성 볼', color: '#8ac926', desc: '참여 시 맵 변조 & 가시 2개 소환 및 2배 데미지' },
+        { id: 'hyungjin', name: '조형진 볼', color: '#1982c4', desc: '조블럭스 투사체 & [미조] 반피 이하 시 스킬쿨 0.9초' },
+        { id: 'gangseon', name: '황강선 볼', color: '#6a4c93', desc: '햄버거 성장 & 스킬 2회마다 아령 소환(섭취 시 햄버거 -1)' },
+        { id: 'jiwoo', name: '서지우 볼', color: '#f15bb5', desc: '전방 뒤돌려차기 (데미지 20 & 20% 이하 시 5초 후 처형)' },
+        { id: 'sewoon', name: '김세운 볼', color: '#00bbf9', desc: '아레나 벽 꿀바르기 (회복량 조정 및 꿀트랩 효과 적용)' }
+    ];
+
+    let selectedChars = [];
+    const rosterEl = document.getElementById('roster');
+    const startBtn = document.getElementById('start-game-btn');
+
+    characters.forEach(char => {
+        const card = document.createElement('div');
+        card.className = 'character-card';
+        card.innerHTML = `
+            <h3 style="color: ${char.color};">${char.name}</h3>
+            <div class="skill-desc">${char.desc}</div>
+        `;
+        card.onclick = () => toggleSelect(char, card);
+        rosterEl.appendChild(card);
+    });
+
+    function toggleSelect(char, card) {
+        const index = selectedChars.findIndex(c => c.id === char.id);
+        if (index > -1) {
+            selectedChars.splice(index, 1);
+            card.classList.remove('selected');
+        } else {
+            if (selectedChars.length < 2) {
+                selectedChars.push(char);
+                card.classList.add('selected');
+            }
+        }
+        startBtn.textContent = `게임 시작 (${selectedChars.length}/2)`;
+        startBtn.disabled = selectedChars.length !== 2;
+    }
+
+    startBtn.onclick = () => {
+        document.getElementById('select-screen').classList.remove('active');
+        document.getElementById('arena-screen').classList.add('active');
+        initGame();
+    };
+
+    let canvas, ctx;
+    let balls = [];
+    let gameRunning = false;
+    let isPaused = false;
+    let hazards = []; 
+    let burgers = [];
+    let dumbbells = [];
+    let projectiles = [];
+    let effects = [];
+    let animationId;
+    
+    let arenaShape = 'rectangle'; 
+
+    const DEFAULT_SKILL_TIME = 180;          
+    const HYUNWOONG_SKILL_TIME = 780;        
+    const BAESUNG_SKILL_TIME = 720;          
+    const SEWOON_SKILL_TIME = 360;           
+    const JIWOO_SKILL_TIME = 300;            
+    const HYUNGJIN_SKILL_TIME = 100; 
+
+    function initGame() {
+        canvas = document.getElementById('game-canvas');
+        ctx = canvas.getContext('2d');
+
+        function getRandomVelocity() {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 3.2;
+            return {
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed
+            };
+        }
+
+        const p1Vel = getRandomVelocity();
+        const p2Vel = getRandomVelocity();
+
+        balls = [
+            {
+                x: 300, y: 300, vx: p1Vel.vx, vy: p1Vel.vy, radius: 25, mass: 1.5,
+                color: selectedChars[0].color, name: selectedChars[0].name, id: selectedChars[0].id,
+                hp: 200, maxHp: 200, attackPower: 20, skillTimer: 0, skillCount: 0, attachedTarget: null, attachTimer: 0, honeyWalls: [], executionTimer: 0, grade: '', customSkillTime: 180, isRolling: false
+            },
+            {
+                x: 500, y: 300, vx: p2Vel.vx, vy: p2Vel.vy, radius: 25, mass: 1.2,
+                color: selectedChars[1].color, name: selectedChars[1].name, id: selectedChars[1].id,
+                hp: 200, maxHp: 200, attackPower: 20, skillTimer: 0, skillCount: 0, attachedTarget: null, attachTimer: 0, honeyWalls: [], executionTimer: 0, grade: '', customSkillTime: 180, isRolling: false
+            }
+        ];
+
+        balls.forEach(ball => {
+            if (ball.id === 'jaejun') {
+                rollJaejunStats(ball);
+            }
+        });
+
+    function rollJaejunStats(ball) {
+        if (ball.isRolling) return;
+        ball.isRolling = true;
+
+        const rand = Math.random() * 100;
+        let grade = '';
+        let oldMax = ball.maxHp || 200;
+        let ratio = ball.hp / oldMax;
+        if (isNaN(ratio) || ratio <= 0 || ratio > 1) ratio = 1;
+
+        if (rand < 1) { // 1%
+            grade = '최상';
+            ball.maxHp = 999;
+            ball.attackPower = 50;
+            ball.customSkillTime = 99999999 * 60;
+        } else if (rand < 30) { // 29%
+            grade = '상';
+            ball.maxHp = 300;
+            ball.attackPower = 40;
+            ball.customSkillTime = 99999999 * 60;
+        } else if (rand < 70) { // 40%
+            grade = '중';
+            ball.maxHp = 200;
+            ball.attackPower = 20;
+            ball.customSkillTime = 99999999 * 60;
+        } else { // 30%
+            grade = '하';
+            ball.maxHp = 100;
+            ball.attackPower = 10;
+            ball.customSkillTime = 99999999 * 60;
+        }
+        ball.hp = Math.round(ball.maxHp * ratio);
+        ball.grade = grade;
+        ball.skillTimer = 0; 
+        addEffect(ball.x, ball.y, '#ffca3a', 'GACHA_' + grade);
+
+        setTimeout(() => {
+            ball.isRolling = false;
+        }, 100);
+    }
+
+        balls.forEach(ball => {
+            if (ball.id === 'gangseon') {
+                ball.attackPower = 10;
+            }
+        });
+
+        document.getElementById('p1-name').textContent = balls[0].id === 'jaejun' ? `${balls[0].name} [${balls[0].grade}]` : balls[0].name;
+        document.getElementById('p2-name').textContent = balls[1].id === 'jaejun' ? `${balls[1].name} [${balls[1].grade}]` : balls[1].name;
+
+        hazards = [];
+        burgers = [];
+        dumbbells = [];
+        projectiles = [];
+        effects = [];
+        
+        const hasBaesung = selectedChars.some(c => c.id === 'baesung');
+        if (hasBaesung) {
+            const polyShapes = ['triangle', 'pentagon', 'hexagon'];
+            arenaShape = polyShapes[Math.floor(Math.random() * polyShapes.length)];
+        } else {
+            arenaShape = 'rectangle';
+        }
+
+        gameRunning = true;
+        isPaused = false;
+        document.getElementById('pause-btn').textContent = '일시정지';
+        loop();
+    }
+
+    function togglePause() {
+        isPaused = !isPaused;
+        const pauseBtn = document.getElementById('pause-btn');
+        if (isPaused) {
+            pauseBtn.textContent = '계속하기';
+            pauseBtn.style.background = '#2a9d8f';
+        } else {
+            pauseBtn.textContent = '일시정지';
+            pauseBtn.style.background = '#4361ee';
+            loop();
+        }
+    }
+
+    function goHome() {
+        gameRunning = false;
+        isPaused = false;
+        cancelAnimationFrame(animationId);
+        document.getElementById('arena-screen').classList.remove('active');
+        document.getElementById('result-screen').classList.remove('active');
+        document.getElementById('select-screen').classList.add('active');
+        selectedChars = [];
+        document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+        startBtn.textContent = '게임 시작 (0/2)';
+        startBtn.disabled = true;
+    }
+
+    function loop() {
+        if (!gameRunning || isPaused) return;
+
+        update();
+        render();
+
+        animationId = requestAnimationFrame(loop);
+    }
+
+    function update() {
+        effects.forEach(e => e.life--);
+        effects = effects.filter(e => e.life > 0);
+
+        balls.forEach((ball, idx) => {
+            if (ball.executionTimer && ball.executionTimer > 0) {
+                ball.executionTimer--;
+                if (ball.executionTimer === 0) {
+                    ball.hp = 0; 
+                    addEffect(ball.x, ball.y, '#000000', 'EXECUTE');
+                }
+            }
+
+            let maxTime = getSkillMaxTime(ball, balls[1 - idx]);
+            ball.skillTimer++;
+            if (ball.skillTimer >= maxTime) {
+                ball.skillTimer = 0;
+                ball.skillCount++;
+                triggerSkill(ball, balls[1 - idx]);
+            }
+
+            if (ball.attachTimer > 0) {
+                ball.attachTimer--;
+                if (ball.attachedTarget) {
+                    ball.x = ball.attachedTarget.x + 35;
+                    ball.y = ball.attachedTarget.y + 35;
+                    ball.attachedTarget.hp -= 0.3;
+                }
+                if (ball.attachTimer === 0) {
+                    if (ball.attachedTarget) {
+                        ball.vx = (Math.random() - 0.5) * 6;
+                        ball.vy = (Math.random() - 0.5) * 6;
+                        ball.x = ball.attachedTarget.x + 55;
+                        ball.y = ball.attachedTarget.y + 55;
+                    }
+                    ball.attachedTarget = null;
+                }
+                return;
+            }
+
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            handleArenaCollisions(ball);
+        });
+
+        updateProjectiles();
+        handleBallCollision();
+        updateItems();
+        updateUI();
+
+        if (balls[0].hp <= 0 || balls[1].hp <= 0) {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            showVictoryScreen();
+        }
+    }
+
+    function getSkillMaxTime(ball, target) {
+        if (ball.id === 'jaejun') return ball.customSkillTime || (99999999 * 60);
+        if (ball.id === 'hyunwoong') return HYUNWOONG_SKILL_TIME;
+        if (ball.id === 'baesung') return BAESUNG_SKILL_TIME;
+        if (ball.id === 'sewoon') return SEWOON_SKILL_TIME;
+        if (ball.id === 'jiwoo') return JIWOO_SKILL_TIME;
+        if (ball.id === 'hyungjin') {
+            // 조형진 볼 필살기 [미조]: 상대 체력이 반피(50%) 이하로 떨어졌다면 스킬쿨 0.9초 (54프레임)로 감소
+            if (target && target.hp <= target.maxHp * 0.5) {
+                return 54; // 0.9초 = 54프레임
+            }
+            return HYUNGJIN_SKILL_TIME; 
+        }
+        return DEFAULT_SKILL_TIME;
+    }
+
+    function getArenaVertices() {
+        if (arenaShape === 'rectangle') {
+            return [
+                {x: 15, y: 15},
+                {x: 785, y: 15},
+                {x: 785, y: 585},
+                {x: 15, y: 585}
+            ];
+        } else if (arenaShape === 'triangle') {
+            return [
+                {x: 400, y: 15},
+                {x: 785, y: 585},
+                {x: 15, y: 585}
+            ];
+        } else if (arenaShape === 'pentagon') {
+            return [
+                {x: 400, y: 15},
+                {x: 785, y: 220},
+                {x: 640, y: 585},
+                {x: 160, y: 585},
+                {x: 15, y: 220}
+            ];
+        } else {
+            return [
+                {x: 250, y: 15},
+                {x: 550, y: 15},
+                {x: 785, y: 300},
+                {x: 550, y: 585},
+                {x: 250, y: 585},
+                {x: 15, y: 300}
+            ];
+        }
+    }
+
+    function handleArenaCollisions(ball) {
+        let isOutOfBounds = (ball.x < 0 || ball.x > canvas.width || ball.y < 0 || ball.y > canvas.height);
+        if (isOutOfBounds && ball.id === 'baesung') {
+            const opponent = balls.find(b => b !== ball);
+            if (opponent) {
+                opponent.hp -= 100; 
+            }
+            ball.hp = Math.min(ball.maxHp, ball.hp + 100); 
+            ball.x = canvas.width / 2;  
+            ball.y = canvas.height / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+            addEffect(ball.x, ball.y, '#7209b7', 'BAESUNG_OUT');
+        }
+        const vertices = getArenaVertices();
+        let n = vertices.length;
+
+        for (let i = 0; i < n; i++) {
+            let p1 = vertices[i];
+            let p2 = vertices[(i + 1) % n];
+
+            let dx = p2.x - p1.x;
+            let dy = p2.y - p1.y;
+            let length = Math.sqrt(dx * dx + dy * dy);
+            if (length === 0) continue;
+
+            let nx = dx / length;
+            let ny = dy / length;
+
+            let normalX = -ny;
+            let normalY = nx;
+
+            let vX = ball.x - p1.x;
+            let vY = ball.y - p1.y;
+
+            let t = (vX * dx + vY * dy) / (length * length);
+            t = Math.max(0, Math.min(1, t));
+
+            let closestX = p1.x + t * dx;
+            let closestY = p1.y + t * dy;
+
+            let distVecX = ball.x - closestX;
+            let distVecY = ball.y - closestY;
+            let dist = Math.sqrt(distVecX * distVecX + distVecY * distVecY);
+
+            if (dist < ball.radius) {
+                let centerX = 400, centerY = 300;
+                let toCenterX = centerX - closestX;
+                let toCenterY = centerY - closestY;
+                
+                if (normalX * toCenterX + normalY * toCenterY < 0) {
+                    normalX = -normalX;
+                    normalY = -normalY;
+                }
+
+                let overlap = ball.radius - dist;
+                ball.x += normalX * overlap;
+                ball.y += normalY * overlap;
+
+                let dot = ball.vx * normalX + ball.vy * normalY;
+                if (dot < 0) {
+                    ball.vx = (ball.vx - 2 * dot * normalX) * 0.98;
+                    ball.vy = (ball.vy - 2 * dot * normalY) * 0.98;
+                }
+
+                checkWallEffect(ball, i);
+            }
+        }
+    }
+
+    function checkWallEffect(ball, wallIndex) {
+        let hasHoney = false;
+        balls.forEach(b => {
+            if (b.honeyWalls && b.honeyWalls.includes(wallIndex)) {
+                hasHoney = true;
+            }
+        });
+
+        if (hasHoney) {
+            if (ball.id === 'sewoon') {
+                ball.hp = Math.min(ball.maxHp, ball.hp + 9);
+                addEffect(ball.x, ball.y, '#00bbf9', 'HEAL++');
+            } else {
+                if (!(ball.id === 'hyunwoong' && ball.attachTimer > 0)) {
+                    ball.hp -= (ball.id === 'hyunwoong' ? 6 : 12);
+                    addEffect(ball.x, ball.y, '#ffb703', 'HONEY TRAP');
+                }
+            }
+        }
+
+        if (ball.id === 'gangseon') {
+            ball.hp = Math.min(ball.maxHp, ball.hp + 1);
+        }
+    }
+
+    function updateUI() {
+        if (!balls || balls.length < 2) return;
+
+        const p1 = balls[0];
+        const p2 = balls[1];
+
+        const p1MaxTime = getSkillMaxTime(p1, p2);
+        const p1RemainingFrames = Math.max(0, p1MaxTime - p1.skillTimer);
+        
+        let p1Seconds = (p1RemainingFrames / 60).toFixed(1);
+        if (p1MaxTime > 900000) {
+            p1Seconds = '무한대';
+        }
+
+        const p1HpPercent = Math.max(0, Math.min(100, (p1.hp / p1.maxHp) * 100));
+        const p1SkillPercent = p1MaxTime > 900000 ? 0 : Math.min(100, (p1.skillTimer / p1MaxTime) * 100);
+
+        document.getElementById('p1-hp-text').textContent = `${Math.max(0, Math.round(p1.hp))} / ${p1.maxHp}`;
+        document.getElementById('p1-hp-bar').style.width = `${p1HpPercent}%`;
+        document.getElementById('p1-skill-bar').style.width = `${p1SkillPercent}%`;
+        
+        if (p1MaxTime > 900000) {
+            document.getElementById('p1-skill-time').textContent = `스킬 쿨타임: 영구`;
+        } else {
+            document.getElementById('p1-skill-time').textContent = p1RemainingFrames > 0 ? 
+                `스킬 쿨타임: ${p1Seconds}초 남음` : 
+                `스킬 준비 완료!`;
+        }
+
+        const p2MaxTime = getSkillMaxTime(p2, p1);
+        const p2RemainingFrames = Math.max(0, p2MaxTime - p2.skillTimer);
+        
+        let p2Seconds = (p2RemainingFrames / 60).toFixed(1);
+        if (p2MaxTime > 900000) {
+            p2Seconds = '무한대';
+        }
+
+        const p2HpPercent = Math.max(0, Math.min(100, (p2.hp / p2.maxHp) * 100));
+        const p2SkillPercent = p2MaxTime > 900000 ? 0 : Math.min(100, (p2.skillTimer / p2MaxTime) * 100);
+
+        document.getElementById('p2-hp-text').textContent = `${Math.max(0, Math.round(p2.hp))} / ${p2.maxHp}`;
+        document.getElementById('p2-hp-bar').style.width = `${p2HpPercent}%`;
+        document.getElementById('p2-skill-bar').style.width = `${p2SkillPercent}%`;
+        
+        if (p2MaxTime > 900000) {
+            document.getElementById('p2-skill-time').textContent = `스킬 쿨타임: 영구`;
+        } else {
+            document.getElementById('p2-skill-time').textContent = p2RemainingFrames > 0 ? 
+                `스킬 쿨타임: ${p2Seconds}초 남음` : 
+                `스킬 준비 완료!`;
+        }
+    }
+
+    function handleBallCollision() {
+        const b1 = balls[0];
+        const b2 = balls[1];
+
+        if (b1.attachTimer > 0 || b2.attachTimer > 0) return;
+
+        const dx = b2.x - b1.x;
+        const dy = b2.y - b1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < b1.radius + b2.radius) {
+            const angle = Math.atan2(dy, dx);
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+
+            let tempVx = b1.vx;
+            let tempVy = b1.vy;
+            b1.vx = b2.vx * 0.85;
+            b1.vy = b2.vy * 0.85;
+            b2.vx = tempVx * 0.85;
+            b2.vy = tempVy * 0.85;
+
+            addEffect((b1.x + b2.x)/2, (b1.y + b2.y)/2, '#ffffff', 'HIT');
+
+            if (b1.id === 'gangseon') {
+                b2.hp -= b1.attackPower;
+            }
+            if (b2.id === 'gangseon') {
+                b1.hp -= b2.attackPower;
+            }
+            if (b1.id === 'jaejun') {
+                b2.hp -= b1.attackPower;
+            }
+            if (b2.id === 'jaejun') {
+                b1.hp -= b2.attackPower;
+            }
+
+            const overlap = (b1.radius + b2.radius) - dist;
+            b1.x -= overlap * cos * 0.5;
+            b1.y -= overlap * sin * 0.5;
+            b2.x += overlap * cos * 0.5;
+            b2.y += overlap * sin * 0.5;
+        }
+    }
+
+    function triggerSkill(caster, target) {
+        addEffect(caster.x, caster.y, caster.color, 'SKILL_RING');
+
+        if (caster.id === 'jaejun') {
+            rollJaejunStats(caster);
+            caster.skillTimer = 0; 
+        } else if (caster.id === 'hyunwoong') {
+            caster.attachedTarget = target;
+            caster.attachTimer = 240; 
+            addEffect(target.x, target.y, '#ff595e', 'GLUE');
+        } else if (caster.id === 'hyungjin') {
+            const angle = Math.atan2(target.y - caster.y, target.x - caster.x);
+            const speed = 3.5; 
+            projectiles.push({
+                x: caster.x,
+                y: caster.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: 12,
+                ownerId: 'hyungjin',
+                life: 220, 
+                homingFrames: 35, 
+                target: target
+            });
+            addEffect(caster.x, caster.y, '#1982c4', 'SHOOT');
+        } else if (caster.id === 'gangseon') {
+            burgers.push({ x: Math.random() * 500 + 150, y: Math.random() * 400 + 100 });
+            
+            if (caster.skillCount % 2 === 0) {
+                dumbbells.push({ x: Math.random() * 500 + 150, y: Math.random() * 400 + 100 });
+                addEffect(caster.x, caster.y, '#adb5bd', 'DUMBBELL_SPAWN');
+            }
+        } else if (caster.id === 'jiwoo') {
+            if (!(target.id === 'hyunwoong' && target.attachTimer > 0)) {
+                target.vx += (Math.random() - 0.5) * 8;
+                target.vy += (Math.random() - 0.5) * 8;
+                target.hp -= (target.id === 'hyunwoong' ? 10 : 20); 
+                
+                if (target.hp <= target.maxHp * 0.2 && !target.executionTimer) {
+                    target.executionTimer = 300; 
+                    addEffect(target.x, target.y, '#d90429', 'EXECUTE_WARN');
+                }
+            }
+            addEffect(caster.x, caster.y, '#f15bb5', 'KICK');
+        } else if (caster.id === 'baesung') {
+            // 박배성 볼: 가시가 한번에 2개 소환되도록 변경
+            for (let i = 0; i < 2; i++) {
+                let rx = Math.random() * (canvas.width - 100) + 50;
+                let ry = Math.random() * (canvas.height - 100) + 50;
+                caster.honeyWalls.push({ x: rx, y: ry, radius: 30, timer: 600, type: 'spike' });
+            }
+            addEffect(caster.x, caster.y, '#7209b7', 'BAESUNG_SPIKES');
+            const polyShapes = ['triangle', 'pentagon', 'hexagon'];
+            let newShapes = polyShapes.filter(s => s !== arenaShape);
+            arenaShape = newShapes[Math.floor(Math.random() * newShapes.length)];
+            
+            balls.forEach(b => { if(b.honeyWalls) b.honeyWalls = []; });
+
+            const vertices = getArenaVertices();
+            let edgeIdx = Math.floor(Math.random() * vertices.length);
+            let p1 = vertices[edgeIdx];
+            let p2 = vertices[(edgeIdx + 1) % vertices.length];
+            
+            let ratio = Math.random() * 0.6 + 0.2;
+            let hx = p1.x + (p2.x - p1.x) * ratio;
+            let hy = p1.y + (p2.y - p1.y) * ratio;
+
+            hazards.push({ x: hx, y: hy, radius: 20 });
+            
+            if (!(target.id === 'hyunwoong' && target.attachTimer > 0)) {
+                target.hp -= 12; // 기존 6에서 2배인 12 대미지 적용
+            }
+            addEffect(hx, hy, '#8ac926', 'SPIKE');
+        } else if (caster.id === 'sewoon') {
+            const vertices = getArenaVertices();
+            let randomWallIndex = Math.floor(Math.random() * vertices.length);
+            if (!caster.honeyWalls.includes(randomWallIndex)) {
+                caster.honeyWalls.push(randomWallIndex);
+            }
+            addEffect(caster.x, caster.y, '#00bbf9', 'HONEY_WALL');
+        }
+    }
+
+    function updateProjectiles() {
+        projectiles = projectiles.filter(p => {
+            if (p.homingFrames && p.homingFrames > 0 && p.target) {
+                p.homingFrames--;
+                const angle = Math.atan2(p.target.y - p.y, p.target.x - p.x);
+                const speed = Math.hypot(p.vx, p.vy);
+                p.vx = Math.cos(angle) * speed;
+                p.vy = Math.sin(angle) * speed;
+            }
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+
+            for (let ball of balls) {
+                if (ball.id !== 'hyungjin' || projectiles.indexOf(p) === -1) { 
+                    const dist = Math.hypot(ball.x - p.x, ball.y - p.y);
+                    if (dist < ball.radius + p.radius) {
+                        if (!(ball.id === 'hyunwoong' && ball.attachTimer > 0)) {
+                            ball.hp -= (ball.id === 'hyunwoong' ? 12 : 24); // 투사체 대미지도 2배(12->24) 적용
+                            addEffect(p.x, p.y, '#1982c4', 'ROBLOX');
+                        } else {
+                            addEffect(p.x, p.y, '#ff595e', 'INVINCIBLE');
+                        }
+                        return false;
+                    }
+                }
+            }
+
+            if (p.life <= 0 || p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    function addEffect(x, y, color, type) {
+        effects.push({ x, y, color, type, life: 30, maxLife: 30 });
+    }
+
+    function updateItems() {
+        burgers = burgers.filter(burger => {
+            for (let ball of balls) {
+                const dist = Math.hypot(ball.x - burger.x, ball.y - burger.y);
+                if (dist < ball.radius + 15) {
+                    if (ball.id === 'gangseon') {
+                        ball.radius = Math.min(48, ball.radius + 3);       
+                        ball.maxHp += 10;                                 
+                        ball.hp = Math.min(ball.maxHp, ball.hp + 10);       
+                        ball.attackPower += 3;                            
+                        addEffect(ball.x, ball.y, '#ffb703', 'EAT');
+                        return false; 
+                    }
+                }
+            }
+            return true;
+        });
+
+        dumbbells = dumbbells.filter(dumbbell => {
+            for (let ball of balls) {
+                const dist = Math.hypot(ball.x - dumbbell.x, ball.y - dumbbell.y);
+                if (dist < ball.radius + 15) {
+                    if (ball.id === 'gangseon') {
+                        ball.radius = Math.max(20, ball.radius - 3);
+                        ball.maxHp = Math.max(100, ball.maxHp - 10);      
+                        ball.attackPower = Math.max(5, ball.attackPower - 3);
+                        addEffect(ball.x, ball.y, '#adb5bd', 'DUMBBELL_EAT');
+                        return false;
+                    }
+                }
+            }
+            return true;
+        });
+
+        hazards = hazards.filter(hazard => {
+            for (let ball of balls) {
+                if (ball.id !== 'baesung') {
+                    const dist = Math.hypot(ball.x - hazard.x, ball.y - hazard.y);
+                    if (dist < ball.radius + hazard.radius) {
+                        if (!(ball.id === 'hyunwoong' && ball.attachTimer > 0)) {
+                            ball.hp -= 1.6; // 해저드 대미지 2배 적용 (기존 0.8 -> 1.6)
+                            ball.vx *= -1.1;
+                            ball.vy *= -1.1;
+                        }
+                    }
+                }
+            }
+            return true;
+        });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const vertices = getArenaVertices();
+
+        ctx.lineWidth = 4;
+        for (let i = 0; i < vertices.length; i++) {
+            let p1 = vertices[i];
+            let p2 = vertices[(i + 1) % vertices.length];
+
+            let isHoneyWall = false;
+            balls.forEach(b => {
+                if (b.honeyWalls && b.honeyWalls.includes(i)) {
+                    isHoneyWall = true;
+                }
+            });
+
+            ctx.strokeStyle = isHoneyWall ? '#ffb703' : '#4cc9f0';
+            ctx.lineWidth = isHoneyWall ? 8 : 4;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        burgers.forEach(b => {
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fb8500';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🍔', b.x, b.y + 4);
+        });
+
+        dumbbells.forEach(d => {
+            ctx.fillStyle = '#adb5bd';
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#495057';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#000';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🏋️', d.x, d.y + 4);
+        });
+
+        hazards.forEach(h => {
+            ctx.fillStyle = '#d90429';
+            ctx.beginPath();
+            ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚡', h.x, h.y + 5);
+        });
+
+        projectiles.forEach(p => {
+            ctx.fillStyle = '#1982c4';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧱', p.x, p.y + 4);
+        });
+
+        effects.forEach(e => {
+            const progress = 1 - (e.life / e.maxLife);
+            ctx.save();
+            if (e.type === 'SKILL_RING') {
+                ctx.strokeStyle = e.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, progress * 70, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (e.type === 'HIT') {
+                ctx.fillStyle = '#ff595e';
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, progress * 20, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (e.type === 'ROBLOX') {
+                ctx.fillStyle = '#1982c4';
+                ctx.fillRect(e.x - 10, e.y - 10, 20, 20);
+            } else if (e.type === 'GLUE') {
+                ctx.strokeStyle = '#ff595e';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, 35, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (e.type && e.type.startsWith('GACHA_')) {
+                ctx.fillStyle = '#ffca3a';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(e.type, e.x, e.y - 30);
+            }
+            ctx.restore();
+        });
+
+        balls.forEach(ball => {
+            if (ball.attachTimer > 0 && ball.attachedTarget) {
+                ctx.strokeStyle = '#ff595e';
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(ball.x, ball.y);
+                ctx.lineTo(ball.attachedTarget.x, ball.attachedTarget.y);
+                ctx.stroke();
+            }
+        });
+
+        balls.forEach(ball => {
+            ctx.save();
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            if (ball.id === 'hyunwoong' && ball.attachTimer > 0) {
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius + 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(ball.name, ball.x, ball.y - ball.radius - 8);
+            ctx.restore();
+        });
+    }
+
+    function showVictoryScreen() {
+        const winner = balls[0].hp > balls[1].hp ? balls[0] : balls[1];
+        document.getElementById('arena-screen').classList.remove('active');
+        document.getElementById('result-screen').classList.add('active');
+        document.getElementById('winner-text').textContent = `${winner.name} 승리!`;
+        document.getElementById('winner-desc').textContent = `치열한 물리 전투 끝에 승리하였습니다.`;
+    }
+</script>
+
+</body>
+</html>
